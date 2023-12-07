@@ -1,11 +1,11 @@
 # C_Game_FlightExpress
 VisualStudio2022 / Windows11 / C / console game
-키보드를 이용해 비행기를 조종하여 랜덤하게 떨어지는 운석을 피하는 간단한 콘솔 게임\n
-process.h의 _beginthreadex() 함수를 사용해 맵의 변화와 캐릭터의 변화를 멀티스레드 프로그래밍
-stdlib.h의 rand()함수를 사용해 맵의 운석을 항상 랜덤하게 떨어지도록 설정
-운석의 빈도수, 게임 속도 변경을 통한 난이도 조절 기능
+키보드를 이용해 비행기를 조종하여 랜덤하게 떨어지는 운석을 피하는 간단한 콘솔 게임  
+process.h의 _beginthreadex() 함수를 사용해 맵의 변화와 캐릭터의 변화를 멀티스레드 프로그래밍  
+stdlib.h의 rand()함수를 사용해 맵의 운석을 항상 랜덤하게 떨어지도록 설정  
+운석의 빈도수, 게임 속도 변경을 통한 난이도 조절 기능  
 
-# game screenshot
+# Game Screenshots
 1)Main Menu
 ![image](https://github.com/mixgolem/C_Game_FlightExpress/assets/130221911/a4c19811-72fa-40fd-a831-edfb8fc5b189)
 
