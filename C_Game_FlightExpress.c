@@ -6,6 +6,8 @@
 #include <process.h>
 
 // 전역 변수로 이벤트 핸들 선언
+// 맵 스레드가 종료되면(맵이 끝났을 경우) 캐릭터 스레드도 종료하기 위해서 사용함
+// 반대의 경우인 캐릭터 입력으로 캐릭터 스레드를 종료할 경우, 맵 스레드도 종료시킴
 HANDLE g_hExitEvent;
 
 // 맵 크기는 가로 120칸, 세로 300줄
@@ -21,7 +23,7 @@ int SPEED = 300; // 게임 속도(낮을수록 어려움)
 int char_color = 15; // 캐릭터 비행기 색상
 int map_difficulty = 75; // 맵에 운석이 떨어지는 정도(낮을수록 어려움)
 
-// 뮤텍스 선언
+// 뮤텍스 선언. 맵 스레드와 캐릭터 스레드가 변수에 동시 접근할 경우
 HANDLE mutex;
 
 // 콘솔창에서 출력 위치 변경하는 함수
@@ -286,14 +288,16 @@ void game_map(char** map)
 // 멀티스레드 게임플레이(캐릭터의 움직임과 운석이 떨어지는 것이 독립적으로 실행하기 위해)
 HANDLE game_play(char** map)
 {
-    // 맵 생성
+    // 맵 생성. 랜덤하게 생성됨
     game_map_create(map);
 
     // 이벤트 생성
     g_hExitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     // _beginthreadex로 스레드 시작 시, 스레드 핸들을 저장하는 것이 좋다.
+    // 캐릭터 스레드는 캐릭터의 움직임, 조작, 캐릭터 모습 출력을 담당
     HANDLE charThread = (HANDLE)_beginthreadex(NULL, 0, (_beginthreadex_proc_type)game_char, (void*)map, 0, NULL);
+    //맵 스레드는 맵의 움직임을 담당
     HANDLE mapThread = (HANDLE)_beginthreadex(NULL, 0, (_beginthreadex_proc_type)game_map, (void*)map, 0, NULL);
 
     // 두 스레드가 모두 종료될 때까지 대기
