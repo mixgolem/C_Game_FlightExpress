@@ -1,5 +1,6 @@
 # C_Game_FlightExpress
 VisualStudio2022 / Windows11 / C / console game
+키보드를 이용해 비행기를 조종하여 랜덤하게 떨어지는 운석을 피하는 간단한 콘솔 게임
 
 # game screenshot
 1)Main Menu
