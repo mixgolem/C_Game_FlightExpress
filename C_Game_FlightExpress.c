@@ -5,38 +5,39 @@
 #include <time.h>
 #include <process.h>
 
-// Àü¿ª º¯¼ö·Î ÀÌº¥Æ® ÇÚµé ¼±¾ğ
+// ì „ì—­ ë³€ìˆ˜ë¡œ ì´ë²¤íŠ¸ í•¸ë“¤ ì„ ì–¸
 HANDLE g_hExitEvent;
 
-// ¸Ê Å©±â´Â °¡·Î 120Ä­, ¼¼·Î 300ÁÙ
+// ë§µ í¬ê¸°ëŠ” ê°€ë¡œ 120ì¹¸, ì„¸ë¡œ 300ì¤„
 #define MAP_SIZE_ROW 300
 #define MAP_SIZE_COL 120
-#define LIFE 3 // ±âº» ¸ñ¼û
+#define LIFE 3 // ê¸°ë³¸ ëª©ìˆ¨
 
-// Àü¿ª º¯¼ö ¼³Á¤
-int row_pos = 55; // ÃÊ±â À§Ä¡
-int life = LIFE; // ¸ñ¼û
-int score = 0; // Á¡¼ö
-int SPEED = 300; // °ÔÀÓ ¼Óµµ(³·À»¼ö·Ï ¾î·Á¿ò)
-int char_color = 15; // Ä³¸¯ÅÍ ºñÇà±â »ö»ó
+// ì „ì—­ ë³€ìˆ˜ ì„¤ì •
+int row_pos = 55; // ì´ˆê¸° ìœ„ì¹˜
+int life = LIFE; // ëª©ìˆ¨
+int score = 0; // ì ìˆ˜
+int SPEED = 300; // ê²Œì„ ì†ë„(ë‚®ì„ìˆ˜ë¡ ì–´ë ¤ì›€)
+int char_color = 15; // ìºë¦­í„° ë¹„í–‰ê¸° ìƒ‰ìƒ
+int map_difficulty = 75; // ë§µì— ìš´ì„ì´ ë–¨ì–´ì§€ëŠ” ì •ë„(ë‚®ì„ìˆ˜ë¡ ì–´ë ¤ì›€)
 
-// ¹ÂÅØ½º ¼±¾ğ
+// ë®¤í…ìŠ¤ ì„ ì–¸
 HANDLE mutex;
 
-// ÄÜ¼ÖÃ¢¿¡¼­ Ãâ·Â À§Ä¡ º¯°æÇÏ´Â ÇÔ¼ö
+// ì½˜ì†”ì°½ì—ì„œ ì¶œë ¥ ìœ„ì¹˜ ë³€ê²½í•˜ëŠ” í•¨ìˆ˜
 void gotoxy(int x, int y)
 {
     COORD pos = { x, y };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
 
-// ÄÜ¼ÖÃ¢ Ãâ·Â »ö»ó º¯°æ ÇÔ¼ö
+// ì½˜ì†”ì°½ ì¶œë ¥ ìƒ‰ìƒ ë³€ê²½ í•¨ìˆ˜
 void textcolor(int colorNum)
 {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), colorNum);
 }
 
-// »ö»ó ¿­°ÅÇü
+// ìƒ‰ìƒ ì—´ê±°í˜•
 enum ColorType
 {
     BLACK,       // 0
@@ -57,7 +58,7 @@ enum ColorType
     WHITE        // 15
 } COLOR;
 
-// ¹®ÀÚ¿­À» ¸» ÇÏ´Â °Í Ã³·³ Ãâ·ÂÇÏ´Â ÇÔ¼ö
+// ë¬¸ìì—´ì„ ë§ í•˜ëŠ” ê²ƒ ì²˜ëŸ¼ ì¶œë ¥í•˜ëŠ” í•¨ìˆ˜
 void sys_print(char* print)
 {
     Sleep(200);
@@ -71,7 +72,7 @@ void sys_print(char* print)
     Sleep(100);
 }
 
-// °ÔÀÓ ·Î°í Ãâ·Â
+// ê²Œì„ ë¡œê³  ì¶œë ¥
 void game_logo() {
     textcolor(12);
     puts("=============================================================================================");
@@ -92,7 +93,7 @@ void game_logo() {
     textcolor(7);
 }
 
-// °ÔÀÓ¿À¹ö È­¸é Ãâ·Â
+// ê²Œì„ì˜¤ë²„ í™”ë©´ ì¶œë ¥
 void game_over()
 {
     system("cls");
@@ -114,7 +115,7 @@ void game_over()
     _getch();
 }
 
-// °ÔÀÓ ¸Ş´º ÇÔ¼ö
+// ê²Œì„ ë©”ë‰´ í•¨ìˆ˜
 int game_menu()
 {
     game_logo();
@@ -136,7 +137,7 @@ int game_menu()
     return select_menu;
 }
 
-// Ä³¸¯ÅÍ Ãâ·Â ¹× Á¶Á¾ ÇÔ¼ö
+// ìºë¦­í„° ì¶œë ¥ ë° ì¡°ì¢… í•¨ìˆ˜
 void game_char(char** map)
 {
     while (1)
@@ -145,27 +146,27 @@ void game_char(char** map)
         Sleep(1);
         if ((input == 'a') && (row_pos > 2))
         {
-            WaitForSingleObject(mutex, INFINITE); // ¹ÂÅØ½º ¶ô
+            WaitForSingleObject(mutex, INFINITE); // ë®¤í…ìŠ¤ ë½
             row_pos -= 2;
-            ReleaseMutex(mutex); // ¹ÂÅØ½º ¾ğ¶ô
+            ReleaseMutex(mutex); // ë®¤í…ìŠ¤ ì–¸ë½
         }
         else if (input == 'd' && (row_pos < 114))
         {
-            WaitForSingleObject(mutex, INFINITE); // ¹ÂÅØ½º ¶ô
+            WaitForSingleObject(mutex, INFINITE); // ë®¤í…ìŠ¤ ë½
             row_pos += 2;
-            ReleaseMutex(mutex); // ¹ÂÅØ½º ¾ğ¶ô
+            ReleaseMutex(mutex); // ë®¤í…ìŠ¤ ì–¸ë½
         }
         else if (input == 'w' && (char_color < 15))
         {
-            WaitForSingleObject(mutex, INFINITE); // ¹ÂÅØ½º ¶ô
+            WaitForSingleObject(mutex, INFINITE); // ë®¤í…ìŠ¤ ë½
             char_color++;
-            ReleaseMutex(mutex); // ¹ÂÅØ½º ¾ğ¶ô
+            ReleaseMutex(mutex); // ë®¤í…ìŠ¤ ì–¸ë½
         }
         else if (input == 's' && (char_color > 1))
         {
-            WaitForSingleObject(mutex, INFINITE); // ¹ÂÅØ½º ¶ô
+            WaitForSingleObject(mutex, INFINITE); // ë®¤í…ìŠ¤ ë½
             char_color--;
-            ReleaseMutex(mutex); // ¹ÂÅØ½º ¾ğ¶ô
+            ReleaseMutex(mutex); // ë®¤í…ìŠ¤ ì–¸ë½
         }
 
         gotoxy(0, 26);
@@ -180,20 +181,21 @@ void game_char(char** map)
         {
             break;
         }
-        // ÀÌº¥Æ® °´Ã¼¸¦ ÀÌ¿ëÇØ ´Ù¸¥ ½º·¹µå°¡ Á¾·áµÇ¾ú´ÂÁö È®ÀÎ
+        // ì´ë²¤íŠ¸ ê°ì²´ë¥¼ ì´ìš©í•´ ë‹¤ë¥¸ ìŠ¤ë ˆë“œê°€ ì¢…ë£Œë˜ì—ˆëŠ”ì§€ í™•ì¸
         if (WaitForSingleObject(g_hExitEvent, 0) == WAIT_OBJECT_0)
         {
-            // ´Ù¸¥ ½º·¹µå°¡ Á¾·áµÇ¾úÀ¸¸é ÇöÀç ½º·¹µåµµ Á¾·á
+            // ë‹¤ë¥¸ ìŠ¤ë ˆë“œê°€ ì¢…ë£Œë˜ì—ˆìœ¼ë©´ í˜„ì¬ ìŠ¤ë ˆë“œë„ ì¢…ë£Œ
             _endthreadex(0);
         }
     }
-    // ½º·¹µå Á¾·á ½Ã ÀÌº¥Æ® ½Ã±×³Î
+    // ìŠ¤ë ˆë“œ ì¢…ë£Œ ì‹œ ì´ë²¤íŠ¸ ì‹œê·¸ë„
     SetEvent(g_hExitEvent);
 
+    // ìŠ¤ë ˆë“œ ì¢…ë£Œ
     _endthreadex(0);
 }
 
-// ¸Ê ¹«ÀÛÀ§·Î »ı¼ºÇÏ´Â ÇÔ¼ö
+// ë§µ ë¬´ì‘ìœ„ë¡œ ìƒì„±í•˜ëŠ” í•¨ìˆ˜
 void game_map_create(char** map)
 {
     srand(time(NULL));
@@ -202,31 +204,31 @@ void game_map_create(char** map)
     {
         for (int j = 0; j < MAP_SIZE_COL; j++)
         {
-            int random_seed = rand() % 60; // ÀÌ °ªÀÌ ÀÛÀ»¼ö·Ï ³­ÀÌµµ ¾î·Á¿ò
+            int random_seed = rand() % map_difficulty; // ì´ ê°’ì´ ì‘ì„ìˆ˜ë¡ ë‚œì´ë„ ì–´ë ¤ì›€
             if (random_seed < 1)
             {
 
-                map[i][j] = '*'; // ¿î¼® »ı¼º
+                map[i][j] = '*'; // ìš´ì„ ìƒì„±
             }
             else
             {
-                map[i][j] = ' '; // ºó°ø°£ »ı¼º
+                map[i][j] = ' '; // ë¹ˆê³µê°„ ìƒì„±
             }
         }
     }
 }
 
-// ¸Ê Ãâ·Â ÇÔ¼ö
+// ë§µ ì¶œë ¥ í•¨ìˆ˜
 void game_map(char** map)
 {
-    for (int i = 0; i < MAP_SIZE_ROW - 27; i++) // ¸Ç Ã³À½ Ãâ·ÂµÉ ¸ÊÀÇ ±âÁØÀÌ µÊ
+    for (int i = 0; i < MAP_SIZE_ROW - 27; i++) // ë§¨ ì²˜ìŒ ì¶œë ¥ë  ë§µì˜ ê¸°ì¤€ì´ ë¨
     {
-        WaitForSingleObject(mutex, INFINITE); // ¹ÂÅØ½º ¶ô
+        WaitForSingleObject(mutex, INFINITE); // ë®¤í…ìŠ¤ ë½
         gotoxy(0, 0);
         for (int j = 27; j > 0; j--)
         {
             textcolor(8);
-            printf("%s\n", map[i + j]); // À§¿¡¼­ºÎÅÍ ¾Æ·¡·Î ¸ÊÀ» ÇÑ ÁÙ¾¿ Ãâ·ÂÇÔ
+            printf("%s\n", map[i + j]); // ìœ„ì—ì„œë¶€í„° ì•„ë˜ë¡œ ë§µì„ í•œ ì¤„ì”© ì¶œë ¥í•¨
             textcolor(7);
             gotoxy(0, 27 - j);
         }
@@ -244,63 +246,64 @@ void game_map(char** map)
         {
             gotoxy(6 + i, 29);
             textcolor(12);
-            printf("¢¾");
+            printf("â™¥");
             textcolor(7);
         }
 
-        // Ãæµ¹ ÆÇÁ¤
+        // ì¶©ëŒ íŒì •, ì¶©ëŒí•  ê²½ìš° life 1 ê°ì†Œ, score 50 ê°ì†Œ
         if ((map[i][row_pos] == '*') || (map[i][row_pos + 1] == '*') || (map[i][row_pos + 2] == '*'))
         {
             life -= 1;
+            score -= 50;
         }
 
-        // ¸ñ¼ûÀÌ 0ÀÌ µÉ °æ¿ì
-        if (life <= 0) 
+        // ëª©ìˆ¨ì´ 0ì´ ë  ê²½ìš°
+        if (life <= 0)
         {
             gotoxy(6, 29);
             printf("     ");
-            ReleaseMutex(mutex); // ¹ÂÅØ½º ¾ğ¶ô
-            SetEvent(g_hExitEvent);
-            _endthreadex(0);
+            ReleaseMutex(mutex); // ë®¤í…ìŠ¤ ì–¸ë½
+            SetEvent(g_hExitEvent); // ì¢…ë£Œë¨ì„ ì´ë²¤íŠ¸ë¥¼ í†µí•´ ì•Œë¦¼
+            _endthreadex(0); // ìŠ¤ë ˆë“œ ì¢…ë£Œ
         }
 
-        ReleaseMutex(mutex); // ¹ÂÅØ½º ¾ğ¶ô
+        ReleaseMutex(mutex); // ë®¤í…ìŠ¤ ì–¸ë½
 
         Sleep(SPEED);
 
-        // ÀÌº¥Æ® °´Ã¼¸¦ ÀÌ¿ëÇØ ´Ù¸¥ ½º·¹µå°¡ Á¾·áµÇ¾ú´ÂÁö È®ÀÎ
+        // ì´ë²¤íŠ¸ ê°ì²´ë¥¼ ì´ìš©í•´ ë‹¤ë¥¸ ìŠ¤ë ˆë“œê°€ ì¢…ë£Œë˜ì—ˆëŠ”ì§€ í™•ì¸
         if (WaitForSingleObject(g_hExitEvent, 0) == WAIT_OBJECT_0)
         {
-            // ´Ù¸¥ ½º·¹µå°¡ Á¾·áµÇ¾úÀ¸¸é ÇöÀç ½º·¹µåµµ Á¾·á
+            // ë‹¤ë¥¸ ìŠ¤ë ˆë“œê°€ ì¢…ë£Œë˜ì—ˆìœ¼ë©´ í˜„ì¬ ìŠ¤ë ˆë“œë„ ì¢…ë£Œ
             _endthreadex(0);
         }
     }
-    // ½º·¹µå Á¾·á ½Ã ÀÌº¥Æ® ½Ã±×³Î
+    // ìŠ¤ë ˆë“œ ì¢…ë£Œ ì‹œ ì´ë²¤íŠ¸ ì‹œê·¸ë„
     SetEvent(g_hExitEvent);
     _endthreadex(0);
 }
 
-// ¸ÖÆ¼½º·¹µå °ÔÀÓÇÃ·¹ÀÌ(Ä³¸¯ÅÍÀÇ ¿òÁ÷ÀÓ°ú ¿î¼®ÀÌ ¶³¾îÁö´Â °ÍÀÌ µ¶¸³ÀûÀ¸·Î ½ÇÇàÇÏ±â À§ÇØ)
+// ë©€í‹°ìŠ¤ë ˆë“œ ê²Œì„í”Œë ˆì´(ìºë¦­í„°ì˜ ì›€ì§ì„ê³¼ ìš´ì„ì´ ë–¨ì–´ì§€ëŠ” ê²ƒì´ ë…ë¦½ì ìœ¼ë¡œ ì‹¤í–‰í•˜ê¸° ìœ„í•´)
 HANDLE game_play(char** map)
 {
-    // ¸Ê »ı¼º
+    // ë§µ ìƒì„±
     game_map_create(map);
 
-    // ÀÌº¥Æ® »ı¼º
+    // ì´ë²¤íŠ¸ ìƒì„±
     g_hExitEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    // _beginthreadex·Î ½º·¹µå ½ÃÀÛ ½Ã, ½º·¹µå ÇÚµéÀ» ÀúÀåÇÏ´Â °ÍÀÌ ÁÁ´Ù.
+    // _beginthreadexë¡œ ìŠ¤ë ˆë“œ ì‹œì‘ ì‹œ, ìŠ¤ë ˆë“œ í•¸ë“¤ì„ ì €ì¥í•˜ëŠ” ê²ƒì´ ì¢‹ë‹¤.
     HANDLE charThread = (HANDLE)_beginthreadex(NULL, 0, (_beginthreadex_proc_type)game_char, (void*)map, 0, NULL);
     HANDLE mapThread = (HANDLE)_beginthreadex(NULL, 0, (_beginthreadex_proc_type)game_map, (void*)map, 0, NULL);
 
-    // µÎ ½º·¹µå°¡ ¸ğµÎ Á¾·áµÉ ¶§±îÁö ´ë±â
+    // ë‘ ìŠ¤ë ˆë“œê°€ ëª¨ë‘ ì¢…ë£Œë  ë•Œê¹Œì§€ ëŒ€ê¸°
     WaitForMultipleObjects(2, (const HANDLE[]) { charThread, mapThread }, TRUE, INFINITE);
 
-    // ½º·¹µå ÇÚµé ´İ±â
+    // ìŠ¤ë ˆë“œ í•¸ë“¤ ë‹«ê¸°
     CloseHandle(charThread);
     CloseHandle(mapThread);
 
-    // ÀÌº¥Æ® ´İ±â
+    // ì´ë²¤íŠ¸ ë‹«ê¸°
     CloseHandle(g_hExitEvent);
 
     return charThread;
@@ -310,26 +313,26 @@ int main(void)
 {
     system("title Flight Express");
 
-    // º¯¼ö ¼±¾ğ
-    int select_menu = 0; // ¸Ş´º ¼±ÅÃ
-    // map 2Â÷¿ø ¹è¿­ µ¿ÀûÇÒ´ç
+    // ë³€ìˆ˜ ì„ ì–¸
+    int select_menu = 0; // ë©”ë‰´ ì„ íƒ
+    // map 2ì°¨ì› ë°°ì—´ ë™ì í• ë‹¹
     char** map = calloc(MAP_SIZE_ROW, sizeof(char*));
     for (int i = 0; i < MAP_SIZE_ROW; i++)
     {
         map[i] = calloc(MAP_SIZE_COL, 2 * sizeof(char));
     }
 
-    // ¹ÂÅØ½º ÃÊ±âÈ­
+    // ë®¤í…ìŠ¤ ì´ˆê¸°í™”
     mutex = CreateMutex(NULL, FALSE, NULL);
 
-    // ÇÁ·Î±×·¥ ½ÃÀÛ
+    // í”„ë¡œê·¸ë¨ ì‹œì‘
 
     while (1)
     {
         system("cls");
         select_menu = game_menu();
 
-        if (select_menu == '1') // °ÔÀÓ ½ÃÀÛ ¸Ş´º
+        if (select_menu == '1') // ê²Œì„ ì‹œì‘ ë©”ë‰´
         {
             select_menu = '0';
             system("cls");
@@ -337,37 +340,39 @@ int main(void)
             gotoxy(20, 10);
             sys_print("Game Start!!!\n");
 
-            // °ÔÀÓ ÃÊ±â ¼³Á¤
+            // ê²Œì„ ì´ˆê¸° ì„¤ì •
             life = LIFE;
             score = 0;
             row_pos = 55;
             system("cls");
 
-            // °ÔÀÓ ÇÃ·¹ÀÌ
+            // ê²Œì„ í”Œë ˆì´
             HANDLE charThread = game_play(map);
 
-            // ½º·¹µå Á¾·á¸¦ ±â´Ù¸²
+            // ìŠ¤ë ˆë“œ ì¢…ë£Œë¥¼ ê¸°ë‹¤ë¦¼
             WaitForSingleObject(charThread, INFINITE);
 
-            // ½º·¹µå ÇÚµéÀ» ´İ¾ÆÁÜ
+            // ìŠ¤ë ˆë“œ í•¸ë“¤ì„ ë‹«ì•„ì¤Œ
             CloseHandle(charThread);
 
-            // ½º·¹µå Á¾·á ÈÄ »ı¸í 0ÀÏ °æ¿ì´Â °ÔÀÓ ¿À¹ö È­¸é Ãâ·Â
+            // ìŠ¤ë ˆë“œ ì¢…ë£Œ í›„ ìƒëª… 0ì¼ ê²½ìš°ëŠ” ê²Œì„ ì˜¤ë²„ í™”ë©´ ì¶œë ¥
             if (life <= 0) {
                 game_over();
             }
-            
+
             system("cls");
             game_logo();
             textcolor(14);
             gotoxy(20, 10);
+            sys_print("Game Finished");
+            gotoxy(20, 11);
             sys_print("Your Score is ");
             printf("%d", score);
             textcolor(7);
             _getch();
-            
+
         }
-        else if (select_menu == '2') // °ÔÀÓ ¼³¸í ¸Ş´º
+        else if (select_menu == '2') // ê²Œì„ ì„¤ëª… ë©”ë‰´
         {
             select_menu = '0';
             system("cls");
@@ -376,15 +381,15 @@ int main(void)
             gotoxy(20, 10);
             sys_print("[Guide]\n");
             gotoxy(20, 11);
-            printf("    [A]::Move Left\t\t[D]::Move Right");
+            printf("\t    [A]::Move Left\t\t[D]::Move Right");
             gotoxy(20, 12);
-            printf("[W] [S]::Change Color\t[Q]::Shutdown\n");
+            printf("\t[W] [S]::Change Color\t[Q]::Shutdown\n");
             gotoxy(20, 13);
-            printf("    [¢¾]::When the Life becomes 0, it's GAME OVER!!");
+            printf("\t    [â™¥]::When the Life becomes 0, it's GAME OVER!!");
             textcolor(7);
             _getch();
         }
-        else if (select_menu == '3') // ºñÇà±â »ö»ó, ³­ÀÌµµ Á¶Àı
+        else if (select_menu == '3') // ë¹„í–‰ê¸° ìƒ‰ìƒ, ë‚œì´ë„ ì¡°ì ˆ
         {
             select_menu = '0';
             system("cls");
@@ -393,20 +398,22 @@ int main(void)
             gotoxy(20, 10);
             sys_print("[Settings]\n");
             gotoxy(20, 11);
-            printf("[W] [S]::Change Color");
+            printf("\t[W] [S]::Change Color");
             gotoxy(20, 12);
-            printf("[Z] [C]::Change Speed(Difficulty)");
+            printf("\t[Z] [C]::Change Speed(ë‚®ì„ìˆ˜ë¡ ë¹ ë¦„)");
             gotoxy(20, 13);
-            printf("    [Q]::Shutdown");
+            printf("\t[<] [>]::Change Map Difficulty(ë‚®ì„ìˆ˜ë¡ ì–´ë ¤ì›€)");
+            gotoxy(20, 14);
+            printf("\t    [Q]::Shutdown");
             textcolor(7);
             while (1)
             {
-                gotoxy(20, 15);
+                gotoxy(20, 17);
                 textcolor(char_color);
                 printf("=^=");
                 textcolor(7);
-                gotoxy(30, 15);
-                printf("SPEED::%3d", SPEED);
+                gotoxy(30, 17);
+                printf("SPEED::%3d\tMAP DIFFICULTY::%3d", SPEED, map_difficulty);
                 char select_3 = _getch();
                 if (select_3 == 'w' && char_color < 15)
                 {
@@ -418,20 +425,28 @@ int main(void)
                 }
                 else if (select_3 == 'z' && SPEED > 50)
                 {
-                    SPEED-=50;
+                    SPEED -= 50;
                 }
                 else if (select_3 == 'c' && SPEED < 300)
                 {
                     SPEED += 50;
+                }
+                else if (select_3 == ',' && map_difficulty > 20)
+                {
+                    map_difficulty -= 10;
+                }
+                else if (select_3 == '.' && map_difficulty < 150)
+                {
+                    map_difficulty += 10;
                 }
                 else if (select_3 == 'q')
                 {
                     break;
                 }
             }
-            
+
         }
-        else if (select_menu == '4') // Å©·¹µ÷
+        else if (select_menu == '4') // í¬ë ˆë”§
         {
             select_menu = '0';
             system("cls");
@@ -440,13 +455,13 @@ int main(void)
             gotoxy(20, 10);
             sys_print("[Credit]\n");
             gotoxy(20, 11);
-            sys_print("  SungKyul Univ. ICE ChanYoung Kim");
+            sys_print("\tSungKyul Univ. ICE ChanYoung Kim");
             gotoxy(20, 12);
-            sys_print("  github.com/mixgolem");
+            sys_print("\tgithub.com/mixgolem");
             gotoxy(20, 13);
-            sys_print("  lavieentulipa116@gmail.com");
+            sys_print("\tlavieentulipa116@gmail.com");
             gotoxy(20, 14);
-            sys_print("  Coding using VisualStudio 2022");
+            sys_print("\tCoding using VisualStudio 2022");
             textcolor(7);
             _getch();
         }
